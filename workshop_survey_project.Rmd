@@ -1,0 +1,1418 @@
+---
+title: "Workshop Survey Project"
+author: "Sarah Swiston"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    code_folding: hide
+    theme: default
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE)
+library(knitr)
+theme <- c("red","blue")[2]
+if (theme == "red") {
+  color1 <- "#AA4B3C"
+  color2 <- "#AA4B3C"
+}
+if (theme == "blue") {
+  color1 <- "#3d85c6ff"
+  color2 <- "#3d85c6ff"
+}
+```
+
+```{r dataloading, message=FALSE, results='hide'}
+# Packages
+library(ggplot2)
+library(plyr)
+library(patchwork)
+library(exactRankTests)
+
+# Raw data file
+data <- read.csv("/Users/Sarah/projects/teaching/data/data.csv",header=TRUE)
+
+# These rows correspond to survey responses from non-attendees
+remove_rows <- which(data$participant_id == 26)
+
+# These columns correspond to identifying information
+remove_cols <- c("participant_id",
+                 "consent_copy_distribution",
+                 "email_attestation",
+                 "participant_information_complete",
+                 "vol_consent_agree_pre___1",
+                 "consent_agree_attest_pre___1",
+                 "consent_witness_signature_pre",
+                 "consent_witness_name_pre",
+                 "preworkshop_informed_consent_form_v100_exp_0528202_complete",
+                 "preworkshop_survey_complete",
+                 "vol_consent_agree_post___1",
+                 "consent_agree_attest_post___1",
+                 "consent_witness_signature_post",
+                 "consent_witness_name_post",
+                 "postworkshop_informed_consent_form_v100_exp_052820_complete",
+                 "postworkshop_survey_complete",
+                 "question_re_study",
+                 "e_consent_documentation",
+                 "did_participant_consent",
+                 "consent_agree_attest_2___1",
+                 "print_name_obtained_cons",
+                 "signature_consent_doc",
+                 "consent_copy_delivered",
+                 "other_provide_copy_ic",
+                 "consent_documentation_complete",
+                 "consent_copy_email",
+                 "participant_signature_pre",
+                 "participant_name_pre",
+                 "preworkshop_informed_consent_form_v100_exp_0528202_timestamp",
+                 "consent_witness_date_pre",
+                 "date_consented_pre",
+                 "postworkshop_informed_consent_form_v100_exp_052820_timestamp",
+                 "participant_signature_post",
+                 "participant_name_post",
+                 "date_consented_post",
+                 "consent_witness_date_post",
+                 "participant_email_doc",
+                 "consent_approval_date_pre",
+                 "consent_approval_date_post",
+                 "date_consent_mailed_2")
+
+# Removing data from non-attendees and identifier columns
+data[remove_cols] <- NA
+data[remove_rows,] <- NA
+```
+
+<hr style="border:2px solid gray">
+
+# Pre-Workshop Questions
+
+<hr style="border:2px solid gray">
+
+<div class = "row">
+
+<div class = "col-md-6">
+
+Question 1: What is your current career stage?
+
+1. Undergraduate student
+2. Master's student
+3. Ph.D. student
+4. Postdoctoral researcher
+5. Faculty
+6. Non-faculty professional
+7. Other (specify)
+
+</div>
+
+<div class = "col-md-6">
+
+```{r q1preplot, message=FALSE}
+# Replacing numerical responses with strings
+data$pre1a <- gsub(1, "Undergraduate", data$pre1a)
+data$pre1a <- gsub(2, "Master's", data$pre1a)
+data$pre1a <- gsub(3, "Doctoral", data$pre1a)
+data$pre1a <- gsub(4, "Postdoctoral", data$pre1a)
+data$pre1a <- gsub(5, "Faculty", data$pre1a)
+data$pre1a <- gsub(6, "Professional", data$pre1a)
+data$pre1a <- gsub(7, "Other", data$pre1a)
+
+# Categorizing "Other" responses
+other <- data$pre1b[which(data$pre1a == "Other")]
+data$pre1a[5] <- "Doctoral"
+data$pre1a[12] <- "Doctoral"
+data$pre1a[28] <- "Doctoral"
+data$pre1a[48] <- "Post\nBaccalaureate"
+
+# Plotting output 
+levels <- c("Undergraduate", "Post\nBaccalaureate", "Master's", "Doctoral", "Postdoctoral", "Faculty", "Professional")
+plot_q1pre <- ggplot(data = subset(data, !is.na(pre1a)), aes(x = factor(pre1a, levels = levels))) +
+  geom_bar(fill = color1) +
+  geom_text(aes(label = ..count..), stat = "count", hjust = 1.25, color = "white", size = 4) +
+  scale_x_discrete(drop = F) +
+  scale_y_continuous(expand = c(0,0)) +
+  coord_flip() +
+  theme_bw() +
+  theme(axis.ticks.y = element_blank(),
+        axis.ticks.x = element_blank(),
+        axis.text.x = element_blank(),
+        axis.text.y = element_text(size=8,color="black"),
+        axis.title.y = element_blank(),
+        axis.title.x = element_blank(),
+        panel.grid = element_blank(),
+        panel.border = element_blank())
+ggsave("/Users/Sarah/projects/teaching/output/q1pre.png",plot_q1pre,width=6,height=4)
+include_graphics("/Users/Sarah/projects/teaching/output/q1pre.png")
+
+# Getting sample size
+N <- sum(!is.na(data$pre1a))
+cat("N = ", N)
+```
+
+</div>
+
+</div>
+
+<hr style="border:2px solid gray">
+
+<div class = "row">
+
+<div class = "col-md-6">
+
+Question 2: What were your initial goals when you applied for this workshop? Check all that apply.
+
+1. Learn about the kinds of questions that phylogenetic methods of historical biogeography can answer
+2. Learn more about different types of models
+3. Learn more about software tools
+4. Try out coding a model with the help of workshop facilitators
+5. Decide whether to do future research using phylogenetic methods of historical biogeography
+6. Discuss research ideas with workshop facilitators and other participants
+7. Network with other researchers
+8. Add the workshop to a resume or CV
+9. I did not have any goals when I applies for this workshop
+10. Other (specify)
+
+<span style="color: gray;">Finding: According to exact binomial tests performed on each category, most participants reported that they were interested in learning about models, software tools, and questions before the workshop.</span>
+
+</div>
+
+<div class = "col-md-6">
+
+```{r q2preplot, message=FALSE}
+# Getting response counts
+responses <- rep(0,10)
+# Looping over the options and counting how many participants checked the box (value = 1)
+for (i in 1:10) {responses[i] <- sum(data[, (which(colnames(data) == "pre2a___1") - 1 + i)] == 1,na.rm=TRUE)}
+# Getting any custom responses (there were none)
+other <- data$pre2b[which(data$pre2a___10 == 1)]
+# Storing response counts in a dataframe
+data_q2 <- data.frame(cbind(response = 1:10, number = responses))
+data_q2$response <- c("Questions", "Models", "Software", "Coding", "Decide", "Discuss", "Network", "Resume", "None", "Other")
+
+# Plotting output
+levels <- c("Models", "Questions", "Software", "Network", "Coding", "Decide", "Discuss", "Resume", "None", "Other")
+plot_q2pre <- ggplot(data = data_q2, aes(x = factor(response,levels=levels), y = number)) +
+  geom_col(fill = color1) +
+  geom_text(aes(label = number), hjust = 1.25, color = "white", size = 6) +
+  scale_x_discrete(limits = rev,
+                   labels = c("Other",
+                              "None",
+                              "Resume/CV",
+                              "Discuss research",
+                              "Decide future research",
+                              "Try coding",
+                              "Network",
+                              "Learn software tools",
+                              "Learn about questions",
+                              "Learn models")) +
+  scale_y_continuous(expand = c(0,0)) +
+  coord_flip() +
+  theme_bw() +
+  theme(axis.ticks.x = element_blank(),
+        axis.ticks.y = element_blank(),
+        axis.text.x = element_blank(),
+        axis.text.y = element_text(size=12,color="black"),
+        axis.title.y = element_blank(),
+        axis.title.x = element_blank(),
+        panel.grid = element_blank(),
+        panel.border = element_blank())
+ggsave("/Users/Sarah/projects/teaching/output/q2pre.png",plot_q2pre,width=6,height=3)
+include_graphics("/Users/Sarah/projects/teaching/output/q2pre.png")
+
+# For each row (attendee), determining how many boxes were checked
+start_ind <- which(colnames(data) == "pre2a___1")
+row_sums <- c()
+for (i in 1:nrow(data)) {
+  row_sum <- sum(data[i,start_ind:(start_ind + 9)],na.rm=T)
+  row_sums <- c(row_sums,row_sum)
+}
+# Counting the participants who checked at least one box, i.e. the sample size
+num_samples <- sum(row_sums != 0)
+
+# Exact binomial tests to determine whether more than 50% of participants expressed a goal
+models_p <- binom.test(data_q2$number[2],num_samples,p=0.5,alternative="g")$p.value
+software_p <- binom.test(data_q2$number[3],num_samples,p=0.5,alternative="g")$p.value
+questions_p <- binom.test(data_q2$number[1],num_samples,p=0.5,alternative="g")$p.value
+
+# Turning counts into percentages (count / sample size)
+models_percent <- round(data_q2$number[which(data_q2$response == "Models")] / num_samples, 2)
+software_percent <- round(data_q2$number[which(data_q2$response == "Software")] / num_samples, 2)
+questions_percent <- round(data_q2$number[which(data_q2$response == "Questions")] / num_samples, 2)
+decide_percent <- round(data_q2$number[which(data_q2$response == "Decide")] / num_samples, 2)
+
+# Printing percentages and test results
+cat(" N = ", num_samples, "\n",
+    "Exact binomial test", "\n",
+    "Models:    ", models_percent, " | p = ", models_p, "\n", 
+    "Software:  ", software_percent, " | p = ", software_p, "\n", 
+    "Questions: ", questions_percent, " | p = ", questions_p, "\n",
+    "Decide:    ", decide_percent)
+```
+
+</div>
+
+</div>
+
+<hr style="border:2px solid gray">
+
+<div class = "row">
+
+<div class = "col-md-5">
+
+Question 3: Please rate your experience with the following topics and tools:
+
+a. Probability and statistics
+b. Molecular phylogenetics
+c. Divergence time estimation
+d. Biogeographic models
+e. Bayesian models
+f. Markov chain Monte Carlo
+g. Unix command line
+h. RevBayes
+
+Options: Unfamiliar, somewhat familiar, competent, highly competent, expert
+
+<span style="color: gray;">Finding: According to an exact binomial test comparing the combined "somewhat familiar" and "competent" categories with all other categories, most participants were either "somewhat familiar" or "competent" across topics (excluding RevBayes). According to an exact binomial  test comparing the combined "highly competent" and "expert" categories with all other categories, few participants rated themselves as highly competent or expert across topics (excluding RevBayes). According to the exact Wilcoxon signed rank test comparing the responses for the RevBayes topic to the second-most unfamiliar topic (biogeographic models), the most unfamiliar topic was RevBayes.</span>
+
+</div>
+
+<div class = "col-md-7">
+
+```{r q3preplot, message=FALSE}
+# Counting responses
+questions <- c("Probability and statistics", "Molecular phylogenetics", "Divergence time estimation", "Biogeographic models", "Bayesian models", "Markov chain Monte Carlo", "Unix command line", "RevBayes")
+answers <- c("Unfamiliar", "Somewhat familiar", "Competent", "Highly competent", "Expert")
+data_q3_subset <- data[(which(colnames(data) == "pre3a")):(which(colnames(data) == "pre3a") + 7)]
+# Creating a matrix to store response counts for each question
+data_q3 <- matrix(ncol=3,nrow=8*5)
+# Looping over each question and response to count the number of instances
+row <- 1
+for (i in 1:8) {
+  for (j in 1:5) {
+    data_q3[row,1] <- questions[i]
+    data_q3[row,2] <- answers[j]
+    data_q3[row,3] <- sum((data_q3_subset[,i]) == j, na.rm = TRUE)
+    row <- row + 1
+  }
+}
+# Turning the matrix of response counts into a dataframe
+data_q3 <- data.frame(data_q3)
+colnames(data_q3) <- c("question", "answer", "count")
+data_q3$count <- as.numeric(data_q3$count)
+
+# Number of responses over all topics except RevBayes
+colsums <- 0
+for (i in 1:7) {
+  colsum <- sum(!is.na(data_q3_subset[[i]]))
+  colsums <- colsums + colsum
+}
+
+# Plotting output
+plot_q3pre <- ggplot(data = data_q3, aes(x = factor(question, levels = questions), y = factor(answer, levels = answers), fill = count)) +
+  geom_tile() +
+  geom_text(aes(label = count), color = "black", size = 6) +
+  scale_x_discrete(limits = rev,
+                   expand = c(0,0),
+                 labels = c("RevBayes",
+                            "Command line",
+                            "Markov chain Monte Carlo",
+                            "Bayesian models",
+                            "Biogeographic models",
+                            "Divergence time estimation",
+                            "Molecular phylogenetics",
+                            "Probability and statistics")) +
+  scale_y_discrete(expand = c(0,0),
+                    labels = c("Unfamiliar",
+                              "Somewhat\nfamiliar",
+                              "Competent",
+                              "Highly\ncompetent",
+                              "Expert")) +
+  scale_fill_gradient(low="white", high=color1) +
+  coord_flip() +
+  theme_bw() +
+  theme(axis.ticks.y = element_blank(),
+        axis.ticks.x = element_blank(),
+        axis.text.y = element_text(size=12,color="black"),
+        axis.text.x = element_text(size=10,color="black"),
+        axis.title.y = element_blank(),
+        axis.title.x = element_blank(),
+        panel.grid = element_blank(),
+        legend.position = "none")
+ggsave("/Users/Sarah/projects/teaching/output/q3pre.png",plot_q3pre,width=6,height=4)
+include_graphics("/Users/Sarah/projects/teaching/output/q3pre.png")
+
+# Combining some response types for statistical tests, excluding RevBayes
+familiar_or_competent <- data_q3$count[which(data_q3$answer[1:35]=="Somewhat familiar")] + data_q3$count[which(data_q3$answer[1:35]=="Competent")]
+not_familiar_or_competent <- data_q3$count[which(data_q3$answer[1:35]=="Highly competent")] + data_q3$count[which(data_q3$answer[1:35]=="Expert")] + data_q3$count[which(data_q3$answer[1:35]=="Unfamiliar")]
+
+# Combining some response types for statistical tests, excluding RevBayes
+highly_or_expert <- data_q3$count[which(data_q3$answer[1:35]=="Highly competent")] + data_q3$count[which(data_q3$answer[1:35]=="Expert")]
+not_highly_or_expert <- data_q3$count[which(data_q3$answer[1:35]=="Unfamiliar")] + data_q3$count[which(data_q3$answer[1:35]=="Somewhat familiar")] + data_q3$count[which(data_q3$answer[1:35]=="Competent")]
+
+# Exact binomial test for somewhat familiar / competent versus other responses
+somewhat_or_competent_test <- binom.test(sum(familiar_or_competent,na.rm=T),colsums,p=0.5,alternative="g")$p.value
+somewhat_or_competent_percent <- round(sum(familiar_or_competent) / (sum(familiar_or_competent) + sum(not_familiar_or_competent)),2)
+# Exact binomial test test for highly competent / expert versus other responses
+highly_or_expert_test <- binom.test(sum(highly_or_expert,na.rm=T),colsums,p=0.5,alternative="l")$p.value
+highly_or_expert_percent <- round(sum(highly_or_expert) / (sum(highly_or_expert) + sum(not_highly_or_expert)),2)
+# Exact Wilcoxon signed rank test for RevBayes versus the next-least-familiar category, models
+unfamiliar_test <- wilcox.exact(data$pre3d,data$pre3h,paired=T,alternative="g")$p.value
+mean_rb_familiarity <- round(mean(data$pre3h,na.rm=T),2)
+
+# For each row (attendee), determining the sum of all responses
+start_ind <- which(colnames(data) == "pre3a")
+row_sums <- c()
+for (i in 1:nrow(data)) {
+  row_sum <- sum(data[i,start_ind:(start_ind + 7)],na.rm=TRUE)
+  row_sums <- c(row_sums,row_sum)
+}
+# Counting the participants who submitted at least one response, i.e. the sample size
+N <- sum(row_sums != 0)
+
+# Printing percentages and test results
+cat(" N = ", N, "\n",
+    "Exact binomial test", "\n",
+    "Somewhat familiar & competent: ", somewhat_or_competent_percent, " | p = ", somewhat_or_competent_test, "\n", 
+    "Highly competent & expert:      ", highly_or_expert_percent, " | p = ", highly_or_expert_test, "\n",
+    "Exact Wilcoxon signed rank test", "\n",
+    "Unfamiliar models vs. RevBayes:       | p = ", unfamiliar_test, "\n",
+    "Mean RevBayes familiarity:     ", mean_rb_familiarity)
+```
+
+</div>
+
+</div>
+
+<hr style="border:2px solid gray">
+
+<div class = "row">
+
+<div class = "col-md-6">
+
+Question 4: During your time as a researcher, how often have the following events occurred?
+
+* I wanted to use a research method, but stopped because the *software* was too difficult to use.
+* I used a research method even though the *software* was difficult to use.
+* I wanted to use a research method, but stopped because the *programming* was too difficult.
+* I used a research method even though the *programming* was difficult.
+* I wanted to use a research method, but stopped because the *statistical analysis* was too difficult.
+* I used a research method even though the *statistical analysis* was difficult.
+* I wanted to use a research method, but stopped because the *model* was too difficult to understand.
+* I used a research method even though the *model* was difficult to understand.
+
+Options: Never, Rarely, Sometimes, Often, Very often
+
+<span style="color: gray;">Finding: According to exact Wilcoxon signed rank tests (both pairwise for each challenge and overall), participants indicated that they were significantly more likely to continue research despite a variety of challenges than to stop due to those challenges.</span>
+
+</div>
+
+<div class = "col-md-6">
+
+```{r q4preplot, message=FALSE}
+# Counting responses
+questions <- c("Software -- Stopped", "Software -- Continued", "Programming -- Stopped", "Programming -- Continued", "Statistics -- Stopped", "Statistics -- Continued", "Model -- Stopped", "Model -- Continued")
+answers <- c("Never", "Rarely", "Sometimes", "Often", "Very often")
+data_q4_subset <- data[(which(colnames(data) == "pre4a")):(which(colnames(data) == "pre4a") + 7)]
+# Creating a matrix to store response counts for each question
+data_q4 <- matrix(ncol=3,nrow=8*5)
+# Looping over each question and response to count the number of instances
+row <- 1
+for (i in 1:8) {
+  for (j in 1:5) {
+    data_q4[row,1] <- questions[i]
+    data_q4[row,2] <- answers[j]
+    data_q4[row,3] <- sum((data_q4_subset[,i]) == j, na.rm = TRUE)
+    row <- row + 1
+  }
+}
+# Turning the matrix of response counts into a dataframe
+data_q4 <- data.frame(data_q4)
+colnames(data_q4) <- c("question", "answer", "count")
+data_q4$count <- as.numeric(data_q4$count)
+
+# Plotting output
+plot_q4pre <- ggplot(data = data_q4, aes(x = factor(question, levels = questions), y = factor(answer, levels = answers), fill = count)) +
+  geom_tile() +
+  geom_text(aes(label = count), color = "black", size = 6) +
+  scale_x_discrete(expand = c(0,0),
+                   limits = rev,
+                   labels = c("Continued despite the model",
+                              "Stopped because of the model",
+                              "Continued despite statistics",
+                              "Stopped due to statistics",
+                              "Continued despite programming",
+                              "Stopped due to programming",
+                              "Continued despite software",
+                              "Stopped due to software")) +
+  scale_y_discrete(expand = c(0,0)) +
+  scale_fill_gradient(low="white", high=color1) +
+  coord_flip() +
+  theme_bw() +
+  theme(axis.title.y = element_blank(),
+        axis.title.x = element_blank(),
+        axis.text.x = element_text(size=10,color="black"),
+        axis.text.y = element_text(size=12,color="black"),
+        panel.grid = element_blank(),
+        axis.ticks = element_blank(),
+        legend.position = "none")
+ggsave("/Users/Sarah/projects/teaching/output/q4pre.png",plot_q4pre,width=6,height=4)
+include_graphics("/Users/Sarah/projects/teaching/output/q4pre.png")
+
+# Exact Wilcoxon signed rank tests comparing distribution of "stopped" versus "continued" for each topic and all topics combined
+software_p <- wilcox.exact(data$pre4a,data$pre4b,paired=T,alternative="l")$p.value
+programming_p <- wilcox.exact(data$pre4c,data$pre4d,paired=T,alternative="l")$p.value
+statistics_p <- wilcox.exact(data$pre4e,data$pre4f,paired=T,alternative="l")$p.value
+model_p <- wilcox.exact(data$pre4g,data$pre4h,paired=T,alternative="l")$p.value
+total_p <- wilcox.exact(c(data$pre4a,data$pre4c,data$pre4e,data$pre4g),c(data$pre4b,data$pre4d,data$pre4f,data$pre4h),paired=T,alternative="l")$p.value
+
+# Calculating mean responses
+stop <- round(mean(c(data$pre4a, data$pre4c, data$pre4e, data$pre4g),na.rm=T),2)
+continue <- round(mean(c(data$pre4b, data$pre4d, data$pre4f, data$pre4h),na.rm=T),2)
+
+# For each row (attendee), determining the sum of all responses
+start_ind <- which(colnames(data) == "pre4a")
+row_sums <- c()
+for (i in 1:nrow(data)) {
+  row_sum <- sum(data[i,start_ind:(start_ind + 7)],na.rm=TRUE)
+  row_sums <- c(row_sums,row_sum)
+}
+# Counting the participants who submitted at least one response, i.e. the sample size
+N <- sum(row_sums != 0)
+
+# Printing percentages and test results
+cat(" N = ", N, "\n", 
+    "Exact Wilcoxon signed rank test", "\n",
+    "Software:    p = ", software_p, "\n", 
+    "Programming: p = ", programming_p, "\n", 
+    "Statistics:  p = ", statistics_p, "\n", 
+    "Model:       p = ", model_p, "\n", 
+    "Total:       p = ", total_p, "\n", 
+    "Stop mean response:     ", stop, "\n",
+    "Continue mean response: ", continue)
+```
+
+</div>
+
+</div>
+
+<hr style="border:2px solid gray">
+
+<div class = "row">
+
+<div class = "col-md-6">
+
+Question 5: Do you plan to use phylogenetic methods of historical biogeography in your own research?
+
+* Yes
+* No
+* Unsure
+
+If so, when do you plan to start using them?
+
+  * I already use these models
+  * Within the next 3 months
+  * Between 3 and 6 months
+  * Between 6 months and 1 year
+  * After 1 year
+
+How do you plan to apply these methods in your own research?
+
+<span style="color: gray;">Finding: According to the exact binomial test, most participants plan to use phylogenetic methods of historical biogeography before the workshop.</span>
+
+</div>
+
+<div class = "col-md-6">
+
+```{r q5preplot, message=FALSE}
+# Replacing numerical responses with strings (y/n)
+data$pre5a <- gsub(1, "Yes", data$pre5a)
+data$pre5a <- gsub(2, "No", data$pre5a)
+data$pre5a <- gsub(3, "Unsure", data$pre5a)
+
+# Plotting output (y/n)
+levels1 <- c("Yes", "No", "Unsure")
+plot_yn <- ggplot(data = subset(data, !is.na(pre5a)), aes(x = factor(pre5a, levels = levels1))) +
+  geom_bar(fill = color1) +
+  geom_text(aes(label = ..count..), stat = "count", hjust = 1.25, color = "white", size = 6) +
+  scale_x_discrete(drop = F,
+                   limits = rev,
+                   labels = c("Unsure",
+                              "No",
+                              "Yes")) +
+  scale_y_continuous(expand = c(0,0)) +
+  theme_bw() +
+  coord_flip() +
+  theme(axis.ticks.y = element_blank(),
+        axis.ticks.x = element_blank(),
+        axis.text.y = element_text(size=12,color="black"),
+        axis.text.x = element_blank(),
+        axis.title.y = element_blank(),
+        axis.title.x = element_blank(),
+        panel.grid = element_blank(),
+        panel.border = element_blank())
+
+# Replacing numerical responses with strings (when)
+data$pre5b <- gsub(1, "Already use", data$pre5b)
+data$pre5b <- gsub(2, "Within three months", data$pre5b)
+data$pre5b <- gsub(3, "Three to six months", data$pre5b)
+data$pre5b <- gsub(4, "Six months to one year", data$pre5b)
+data$pre5b <- gsub(5, "After one year", data$pre5b)
+
+# Plotting output (when)
+levels2 <- c("Already use", "Within three months", "Three to six months", "Six months to one year", "After one year")
+plot_timing <- ggplot(data = subset(data, !is.na(pre5b)), aes(x = factor(pre5b, levels = levels2))) +
+  geom_bar(fill = color1) +
+  geom_text(aes(label = ..count..), stat = "count", hjust = 1.25, color = "white", size = 6) +
+    scale_x_discrete(drop = F,
+                     limits = rev,
+                     labels = c("After 1 year",
+                                "6 months -- 1 year",
+                                "3--6 months",
+                                "Within 3 months",
+                                "Already use")) +
+  scale_y_continuous(expand = c(0,0)) +
+  coord_flip() +
+  theme_bw() +
+  theme(axis.ticks.y = element_blank(),
+        axis.ticks.x = element_blank(),
+        axis.text.y = element_text(size=12,color="black"),
+        axis.text.x = element_blank(),
+        axis.title.y = element_blank(),
+        axis.title.x = element_blank(),
+        panel.grid = element_blank(),
+        panel.border = element_blank())
+
+# Plotting both plots
+plot_q5pre <- plot_yn / plot_spacer() / plot_timing +
+  plot_layout(heights = c(4,.5,4))
+ggsave("/Users/Sarah/projects/teaching/output/q5pre.png",plot_q5pre,width=6,height=4)
+include_graphics("/Users/Sarah/projects/teaching/output/q5pre.png")
+
+# Counting the number of responses
+num_samples <- sum(!is.na(data$pre5a))
+
+# Perfoming an exact binomial test comparing "yes" responses to non-yes responses
+yes_p <- binom.test(sum(data$pre5a=="Yes",na.rm=T),num_samples,p=0.5,alternative="g")$p.value
+yes_percent <- round(sum(data$pre5a=="Yes",na.rm=T) / num_samples, 2)
+
+# Printing test results and percentages
+cat(" N = ", num_samples, "\n",
+    "Exact binomial test", "\n",
+    "Yes: ", yes_percent, " | p = ", yes_p)
+```
+
+</div>
+
+</div>
+
+```{r q5preresponses, eval=FALSE, results='asis', message=FALSE}
+# Printing responses to the open question IF permission was given
+for (i in 1:nrow(data)) {
+  if (!is.na(data$pre5c[i])) {
+    if (data$pre5c[i] != "") {
+      if (data$verbatim_yn_pre[i] == 1) {
+        cat(paste0("<span style=\"color:",color2,"\">\n"))
+        cat(data$pre5c[i])
+        cat("<span>")
+        cat("\n")
+        cat("\n")
+      } else {
+        cat(paste0("<span style=\"color:",color2,"\">\n"))
+        cat(paste0(data$pre5c[i], " [DO NOT USE]"))
+        cat("<span>")
+        cat("\n")
+        cat("\n")
+      }
+    }
+  }
+}
+```
+
+<hr style="border:2px solid gray">
+
+# Post-Workshop Questions
+
+<hr style="border:2px solid gray">
+
+<div class = "row">
+
+<div class = "col-md-6">
+
+Question 1: Did this workshop meet your expectation? Why or why not?
+
+Coded Responses:
+
+* Did not meet expectations
+* Partly met expectations
+* Met expectations
+* Exceeded expectations
+
+<span style="color: gray;">Finding: According to the exact binomial test on the combined number of participants who indicated that their expectations were met and exceeded, participants felt that their expectations for the workshop were met or exceeded.</span>
+
+</div>
+
+<div class = "col-md-6">
+
+```{r q1postplot, message=FALSE}
+# Coding responses
+post1code_list <- c("M",NA,"M","P","M","M","E","M","M","E",NA,NA,"P","P","M","M",NA,NA,NA,"M",NA,NA,NA,NA,NA,NA,"M",NA,NA,NA,"M",NA,"P",NA,NA,NA,NA,"E",NA,"M",NA,NA,"M",NA,NA,"M",NA,NA,"P","M","O",NA,"M",NA,NA,NA,"P",NA,NA,"M",NA,"M","M","M","M","M",NA,NA)
+data_post1code <- data.frame(post1code=post1code_list)
+
+# Plotting output (y/n)
+levels1 <- c("O","N", "P", "M", "E")
+plot_q1post <- ggplot(data = subset(data_post1code, !is.na(post1code)), aes(x = factor(post1code, levels = levels1))) +
+  geom_bar(fill = color1) +
+  geom_text(aes(label = ..count..), stat = "count", hjust = 1.25, color = "white", size = 6) +
+  scale_x_discrete(drop = F,
+                   labels = c("Other",
+                              "Did not meet expectations",
+                              "Partly met expectations",
+                              "Met expectations",
+                              "Exceeded expectations")) +
+  scale_y_continuous(expand = c(0,0)) +
+  theme_bw() +
+  coord_flip() +
+  theme(axis.ticks.y = element_blank(),
+        axis.ticks.x = element_blank(),
+        axis.text.y = element_text(size=12,color="black"),
+        axis.text.x = element_blank(),
+        axis.title.y = element_blank(),
+        axis.title.x = element_blank(),
+        panel.grid = element_blank(),
+        panel.border = element_blank())
+ggsave("/Users/Sarah/projects/teaching/output/q1post.png",plot_q1post,width=6,height=3)
+include_graphics("/Users/Sarah/projects/teaching/output/q1post.png")
+
+# Countin the total number of responses
+num_samples <- length(post1code_list[which(!is.na(post1code_list))])
+# Combining the totals for "meets expectations" and "exceeds expectations"
+met_count <- sum(data_post1code=="M",na.rm=T) + sum(data_post1code=="E",na.rm=T)
+# Performing exact binomial test for "meets or exceeds" versus other categories
+met_p <- binom.test(met_count,num_samples,p=0.5,alternative="g")$p.value
+met_percent <- round(met_count / num_samples, 2)
+
+# Printing test results and percentage
+cat(" N = ", num_samples, "\n",
+    "Exact binomial test", "\n",
+    "Met & exceeded: ", met_percent, " | p = ", met_p)
+```
+
+</div>
+
+</div>
+
+```{r q1postresponses, eval=FALSE, results='asis', message=FALSE}
+# Printing responses to the open question IF permission was given
+for (i in 1:nrow(data)) {
+  if (!is.na(data$post1[i])) {
+    if (data$post1[i] != "") {
+      if (data$verbatim_yn_post[i] == 1) {
+        cat(paste0("<span style=\"color:",color2,"\">\n"))
+        cat(data$post1[i])
+        cat("<span>")
+        cat("\n")
+        cat("\n")
+      } else {
+        cat(paste0("<span style=\"color:",color2,"\">\n"))
+        cat(paste0(data$post1[i], " [DO NOT USE]"))
+        cat("<span>")
+        cat("\n")
+        cat("\n")
+      }
+    }
+  }
+}
+```
+
+<hr style="border:2px solid gray">
+
+<div class = "row">
+
+<div class = "col-md-6">
+
+Question 2: For each of the following topics and tools, please indicate how your level of confidence in your ability to use the tool has *changed* after engaging in the workshop.
+
+a. Probability and statistics
+b. Molecular phylogenetics
+c. Divergence time estimation
+d. Biogeographic models
+e. Bayesian models
+f. Markov chain Monte Carlo
+g. Unix command line
+h. RevBayes
+
+Options: Much less confident, less confident, about the same, more confident, much more confident
+
+<span style="color: gray;">Finding: According to exact binomial tests for each topic on the combined "more confident" and "much more confident" response categories compared to all other response categories, for RevBayes and biogeographic models (the topics with the least prior experience and the most prevalent participant goals, not statistically tested), confidence significantly improved.</span>
+
+</div>
+
+<div class = "col-md-6">
+
+```{r q2postplot, message=FALSE}
+# Counting responses
+questions <- c("Probability and statistics", "Molecular phylogenetics", "Divergence time estimation", "Biogeographic models", "Bayesian models", "Markov chain Monte Carlo", "Unix command line", "RevBayes")
+answers <- c("Much less confident", "Less confident", "About the same", "More confident", "Much more confident")
+data_q2_subset <- data[(which(colnames(data) == "post2a")):(which(colnames(data) == "post2a") + 7)]
+data_q2 <- matrix(ncol=3,nrow=8*5)
+row <- 1
+for (i in 1:8) {
+  for (j in 1:5) {
+    data_q2[row,1] <- questions[i]
+    data_q2[row,2] <- answers[j]
+    data_q2[row,3] <- sum((data_q2_subset[,i]) == j, na.rm = TRUE)
+    row <- row + 1
+  }
+}
+data_q2 <- data.frame(data_q2)
+colnames(data_q2) <- c("question", "answer", "count")
+data_q2$count <- as.numeric(data_q2$count)
+
+# Plotting output
+plot_q2post <- ggplot(data = data_q2, aes(x = factor(question, levels = questions), y = factor(answer, levels = answers), fill = count)) +
+  geom_tile() +
+  geom_text(aes(label = count), color = "black", size = 6) +
+    scale_x_discrete(limits = rev,
+                     expand = c(0,0),
+                   labels = c("RevBayes",
+                              "Unix command line",
+                              "Markov chain Monte Carlo",
+                              "Bayesian models",
+                              "Biogeographic models",
+                              "Divergence time estimation",
+                              "Molecular phylogenetics",
+                              "Probability and statistics")) +
+  scale_y_discrete(expand = c(0,0),
+                   labels = c("Much less\nconfident",
+                              "Less\nconfident",
+                              "About\nthe same",
+                              "More\nconfident",
+                              "Much more\nconfident")) +
+  scale_fill_gradient(low="white", high=color1) +
+  coord_flip() +
+  theme_bw() +
+  theme(axis.ticks.y = element_blank(),
+        axis.ticks.x = element_blank(),
+        axis.text.y = element_text(size=12,color="black"),
+        axis.text.x = element_text(size=10,color="black"),
+        axis.title.y = element_blank(),
+        axis.title.x = element_blank(),
+        panel.grid = element_blank(),
+        legend.position = "none")
+ggsave("/Users/Sarah/projects/teaching/output/q2post.png",plot_q2post,width=6,height=4)
+include_graphics("/Users/Sarah/projects/teaching/output/q2post.png")
+
+# Getting sample size
+start_ind <- which(colnames(data) == "post2a")
+row_sums <- c()
+for (i in 1:nrow(data)) {
+  row_sum <- sum(data[i,start_ind:(start_ind + 7)],na.rm=TRUE)
+  row_sums <- c(row_sums,row_sum)
+}
+num_samples <- sum(row_sums != 0)
+
+# Exact binomial tests for more & much more confident versus other responses for models and RevBayes
+model_count <- sum(data$post2d==4,na.rm=T) + sum(data$post2d==5,na.rm=T)
+model_p <- binom.test(model_count,num_samples,p=0.5,alternative="g")$p.value
+model_average <- round(mean(data$post2d,na.rm=T),2)
+rb_count <- sum(data$post2h==4,na.rm=T) + sum(data$post2h==5,na.rm=T)
+rb_p <- binom.test(rb_count,num_samples,p=0.5,alternative="g")$p.value
+rb_average <- round(mean(data$post2h,na.rm=T),2)
+
+# Printing test results and percentages
+cat(" N = ", num_samples, "\n",
+    "Exact binomial test", "\n",
+    "Biogeographic models: ", model_average, " | p = ", model_p, "\n",
+    "RevBayes:            ", rb_average, " | p = ", rb_p, "\n")
+```
+
+</div>
+
+</div>
+
+<div class = "row">
+
+<div class = "col-md-6">
+
+<span style="color: gray;">For individuals who completed both the pre-workshop survey and the post-workshop survey, we also compared confidence improvement to initial experience level. Across topics, it appears that individuals with less experience had greater confidence improvements (no statistical tests performed).</span>
+
+</div>
+
+<div class = "col-md-6">
+
+```{r prepost, message=FALSE}
+# Getting pre-workshop experience and post-workshop confidence for each topic
+start_ind <- which(colnames(data)=="pre3a")
+data_preconf <- unlist(data[start_ind:(start_ind+7)],use.names=F)
+start_ind <- which(colnames(data)=="post2a")
+data_postconf <- unlist(data[start_ind:(start_ind+7)],use.names=F)
+data_conf <- data.frame(cbind(pre=data_preconf,post=data_postconf))
+conf_matrix <- matrix(0,nrow=5,ncol=5)
+
+# Generating matrix of pairwise counts for pre- and post-workshop responses
+for (ind in 1:length(data_preconf)) {
+  i <- data_preconf[ind]
+  j <- data_postconf[ind]
+  if (!is.na(i) & !is.na(j)) {
+    conf_matrix[i,j] <- conf_matrix[i,j] + 1
+  }
+}
+
+conf_props <- conf_matrix
+
+# Turning counts into per-row proportions
+for (i in 1:5) {
+  for (j in 1:5) {
+    conf_props[i,j] <- round(conf_matrix[i,j] / sum(conf_matrix[i,]),2)
+    if (is.na(conf_props[i,j])) {conf_props[i,j] <- 0}
+  }
+}
+
+i_vals <- c()
+j_vals <- c()
+props <- c()
+
+# Turning count proportions into "long" data
+for (i in 1:5) {
+  for (j in 1:5) {
+    i_vals <- c(i_vals,i)
+    j_vals <- c(j_vals, j)
+    props <- c(props, conf_props[i,j])
+  }
+}
+
+conf_props <- cbind(pre=i_vals, post=j_vals, prop=props)
+
+# Plotting pre-workshop experience versus post-workshop confidence
+plot_conf <- ggplot(data = conf_props, aes(x = factor(pre), y = factor(post), fill = prop)) +
+  geom_tile() +
+  geom_text(aes(label = prop), color = "black", size = 6) +
+  scale_x_discrete(expand = c(0,0),
+                   labels = c("Unfamiliar",
+                              "Somewhat familiar",
+                              "Competent",
+                              "Highly competent",
+                              "Expert")) +
+  scale_y_discrete(expand = c(0,0),
+                   labels = c("Much less\nconfident",
+                              "Less\nconfident",
+                              "About\nthe same",
+                              "More\nconfident",
+                              "Much more\nconfident")) +
+  scale_fill_gradient(low="white", high=color1) +
+  coord_flip() +
+  theme_bw() +
+  theme(axis.title.y = element_blank(),
+        axis.title.x = element_blank(),
+        axis.text.x = element_text(size=10,color="black"),
+        axis.text.y = element_text(size=12,color="black"),
+        panel.grid = element_blank(),
+        axis.ticks = element_blank(),
+        legend.position = "none",
+        aspect.ratio = 1)
+ggsave("/Users/Sarah/projects/teaching/output/conf.png",plot_conf,width=6,height=5)
+include_graphics("/Users/Sarah/projects/teaching/output/conf.png")
+```
+
+</div>
+
+</div>
+
+<hr style="border:2px solid gray">
+
+Question 3: Of the tools or skills addressed in the workshop, what is one thing you could implement in your research relatively easily?
+
+```{r q3postresponses, eval=FALSE, results='asis', message=FALSE}
+# Printing responses to the open question IF permission was given
+for (i in 1:nrow(data)) {
+  if (!is.na(data$post3[i])) {
+    if (data$post3[i] != "") {
+      if (data$verbatim_yn_post[i] == 1) {
+        cat(paste0("<span style=\"color:",color2,"\">\n"))
+        cat(data$post3[i])
+        cat("<span>")
+        cat("\n")
+        cat("\n")
+      } else {
+        cat(paste0("<span style=\"color:",color2,"\">\n"))
+        cat(paste0(data$post3[i], " [DO NOT USE]"))
+        cat("<span>")
+        cat("\n")
+        cat("\n")
+      }
+    }
+  }
+}
+```
+
+<hr style="border:2px solid gray">
+
+<div class = "row">
+
+<div class = "col-md-6">
+
+Question 4: How likely are you to use skills or tools that you *acquired during the workshop* in the future? Why?
+
+Options: Very unlikely, unlikely, neutral, likely, very likely
+
+<span style="color: gray;">Finding: According to the exact binomial test on the combined "likely" and "very likely" response categories compared to other response categories, most participants indicated that they would use skills or tools acquired during the workshop.</span>
+
+</div>
+
+<div class = "col-md-6">
+
+```{r q4postplot, message=FALSE}
+# Replacing numerical responses with strings
+data$post4a <- gsub(1, "Very unlikely", data$post4a)
+data$post4a <- gsub(2, "Unlikely", data$post4a)
+data$post4a <- gsub(3, "Neutral", data$post4a)
+data$post4a <- gsub(4, "Likely", data$post4a)
+data$post4a <- gsub(5, "Very likely", data$post4a)
+
+# Plotting output
+levels <- c("Very unlikely", "Unlikely", "Neutral", "Likely", "Very likely")
+plot_q4post <- ggplot(data = subset(data, !is.na(post4a)), aes(x = factor(post4a, levels = levels))) +
+  geom_bar(fill = color1) +
+  geom_text(aes(label = ..count..), stat = "count", vjust = 1.25, color = "white", size = 6) +
+  scale_x_discrete(drop = F) +
+  scale_y_continuous(expand = c(0,0)) +
+  theme_bw() +
+  theme(axis.ticks.y = element_blank(),
+        axis.ticks.x = element_blank(),
+        axis.text.y = element_blank(),
+        axis.text.x = element_text(size=12,color="black"),
+        axis.title.y = element_blank(),
+        axis.title.x = element_blank(),
+        panel.grid = element_blank(),
+        panel.border = element_blank())
+ggsave("/Users/Sarah/projects/teaching/output/q4post.png",plot_q4post,width=6,height=4)
+include_graphics("/Users/Sarah/projects/teaching/output/q4post.png")
+
+# Getting the sample size
+num_samples <- sum(!is.na(data$post4a))
+more_count <- sum(data$post4a=="Likely",na.rm=T) + sum(data$post4a=="Very likely",na.rm=T)
+# Performing exact binomial test on likely & very likely versus other responses
+more_p <- binom.test(more_count,num_samples,p=0.5,alternative="g")$p.value
+more_percent <- round(more_count / num_samples, 2)
+
+# Printing statistical test and percentage
+cat(" N = ", num_samples, "\n",
+    "Exact binomial test", "\n",
+    "Likely & very likely: ", more_percent, " | p = ", more_p)
+```
+
+</div>
+
+</div>
+
+```{r q4postresponses, eval=FALSE, results='asis', message=FALSE}
+# Printing responses to the open question IF permission was given
+for (i in 1:nrow(data)) {
+  if (!is.na(data$post4b[i])) {
+    if (data$post4b[i] != "") {
+      if (data$verbatim_yn_post[i] == 1) {
+        cat(paste0("<span style=\"color:",color2,"\">\n"))
+        cat(data$post4b[i])
+        cat("<span>")
+        cat("\n")
+        cat("\n")
+      } else {
+        cat(paste0("<span style=\"color:",color2,"\">\n"))
+        cat(paste0(data$post4b[i], " [DO NOT USE]"))
+        cat("<span>")
+        cat("\n")
+        cat("\n")
+      }
+    }
+  }
+}
+```
+
+<hr style="border:2px solid gray">
+
+Question 5: If you plan to use skills or tools acquired during the workshop, which one(s) do you plan to use?
+
+```{r q5postresponses, eval=FALSE, results='asis', message=FALSE}
+# Printing responses to the open question IF permission was given
+for (i in 1:nrow(data)) {
+  if (!is.na(data$post5[i])) {
+    if (data$post5[i] != "") {
+      if (data$verbatim_yn_post[i] == 1) {
+        cat(paste0("<span style=\"color:",color2,"\">\n"))
+        cat(data$post5[i])
+        cat("<span>")
+        cat("\n")
+        cat("\n")
+      } else {
+        cat(paste0("<span style=\"color:",color2,"\">\n"))
+        cat(paste0(data$post5[i], " [DO NOT USE]"))
+        cat("<span>")
+        cat("\n")
+        cat("\n")
+      }
+    }
+  }
+}
+```
+
+<hr style="border:2px solid gray">
+
+<div class = "row">
+
+<div class = "col-md-5">
+
+Question 6: Are you more or less likely to engage with phylogenetic models of historical biogeography *after having taken the workshop* (compared to how you felt before)? Why?
+
+Options: Much less likely, less likely, about the same, more likely, much more likely
+
+<span style="color: gray;">Finding: According to the exact binomial test comparing the combined "more likely" and "much more likely" response categories to all other response categories, participants considered themselves more likely to engage with these models after having taken the workshop.</span>
+
+</div>
+
+<div class = "col-md-7">
+
+```{r q6postplot, message=FALSE}
+# Replacing numerical responses with strings
+mean_change <- round(mean(data$post6a,na.rm=T),2)
+data$post6a <- gsub(1, "Much less likely", data$post6a)
+data$post6a <- gsub(2, "Less likely", data$post6a)
+data$post6a <- gsub(3, "About the same", data$post6a)
+data$post6a <- gsub(4, "More likely", data$post6a)
+data$post6a <- gsub(5, "Much more likely", data$post6a)
+
+# Plotting output
+levels <- c("Much less likely", "Less likely", "About the same", "More likely", "Much more likely")
+plot_q6post <- ggplot(data = subset(data, !is.na(post6a)), aes(x = factor(post6a, levels = levels))) +
+  geom_bar(fill=color1) +
+  geom_text(aes(label = ..count..), stat = "count", vjust = 1.25, color = "white", size = 6) +
+  scale_x_discrete(drop = F,
+                   labels = c("Much\nless likely",
+                              "Less likely",
+                              "About\nthe same",
+                              "More likely",
+                              "Much\nmore likely")) +
+  scale_y_continuous(expand = c(0,0)) +
+  theme_bw() +
+  theme(axis.ticks.y = element_blank(),
+        axis.ticks.x = element_blank(),
+        axis.text.y = element_blank(),
+        axis.text.x = element_text(size=12,color="black"),
+        axis.title.y = element_blank(),
+        axis.title.x = element_blank(),
+        panel.grid = element_blank(),
+        panel.border = element_blank())
+ggsave("/Users/Sarah/projects/teaching/output/q6post.png",plot_q6post,width=6,height=3)
+include_graphics("/Users/Sarah/projects/teaching/output/q6post.png")
+
+# Getting the number of samples
+num_samples <- sum(!is.na(data$post6a))
+more_count <- sum(data$post6a=="More likely",na.rm=T) + sum(data$post6a=="Much more likely",na.rm=T)
+more_percent <- round(more_count / num_samples,2)
+# Exact binomial test for more & much more likely versus other responses
+more_p <- binom.test(more_count,num_samples,p=0.5,alternative="g")$p.value
+
+# Coding written responses
+references_models <- c(1,1,1,1,1,1,1,1,1,1,1,1,1,0,1,0,1,1,1,0,0,1,1,1,0,1,1,1)
+number_references_models <- sum(references_models)
+number_total <- length(references_models)
+percent_reference_models <- round(number_references_models / number_total,2)
+
+# Printing statistical test results and percentages
+cat(" N = ", num_samples, "\n",
+    "Exact binomial test", "\n",
+    "More & much more likely:       ", more_percent, " | p = ", more_p, "\n",
+    "Mean change:                   ", mean_change, "\n",
+    "Proportion referencing models: ", percent_reference_models)
+```
+
+</div>
+
+</div>
+
+```{r q6postresponses, eval=FALSE, results='asis', message=FALSE}
+# Printing responses to the open question IF permission was given
+for (i in 1:nrow(data)) {
+  if (!is.na(data$post6b[i])) {
+    if (data$post6b[i] != "") {
+      if (data$verbatim_yn_post[i] == 1) {
+        cat(paste0("<span style=\"color:",color2,"\">\n"))
+        cat(data$post6b[i])
+        cat("<span>")
+        cat("\n")
+        cat("\n")
+      } else {
+        cat(paste0("<span style=\"color:",color2,"\">\n"))
+        cat(paste0(data$post6b[i], " [DO NOT USE]"))
+        cat("<span>")
+        cat("\n")
+        cat("\n")
+      }
+    }
+  }
+}
+```
+
+<hr style="border:2px solid gray">
+
+<div class = "row">
+
+<div class = "col-md-5">
+
+Question 7: How helpful were these specific activities to your learning?
+
+a. Lecture-style presentations
+b. Group discussions
+c. Coding by yourself
+d. "Coding along" with the instructor
+e. Workshopping research ideas
+
+Options: Very unhelpful, unhelpful, neutral, helpful, very helpful, N/A
+
+<span style="color: gray;">Finding: According to the exact Wilcoxon ranked sign test comparing the "lecture-style presentation" category to all other categories, participants preferred lectures over other activities. However, PLC was still perceived as helpful according to the exact binomial test.</span>
+
+</div>
+
+<div class = "col-md-7">
+
+```{r q7postplot, message=FALSE}
+# Counting responses
+questions <- c("Lecture-style presentations", "Group discussions", "Coding by yourself", "Coding along with the instructor", "Workshopping research ideas")
+answers <- c("Very unhelpful", "Unhelpful", "Neutral", "Helpful", "Very helpful")
+data_q7_subset <- data[(which(colnames(data) == "post7a")):(which(colnames(data) == "post7a") + 4)]
+data_q7 <- matrix(ncol=3,nrow=5*5)
+row <- 1
+for (i in 1:5) {
+  for (j in 1:5) {
+    data_q7[row,1] <- questions[i]
+    data_q7[row,2] <- answers[j]
+    data_q7[row,3] <- sum((data_q7_subset[,i]) == j, na.rm = TRUE)
+    row <- row + 1
+  }
+}
+data_q7 <- data.frame(data_q7)
+colnames(data_q7) <- c("question", "answer", "count")
+data_q7$count <- as.numeric(data_q7$count)
+
+# Plotting output
+plot_q7post <- ggplot(data = data_q7, aes(x = factor(question, levels = questions), y = factor(answer, levels = answers), fill = count)) +
+  geom_tile() +
+  geom_text(aes(label = count), color = "black", size = 6) +
+  scale_x_discrete(expand = c(0,0),
+                   limits = rev,
+                   labels = c("Workshopping research ideas",
+                              "Coding along with the instructor\n(Participatory Live Coding)",
+                              "Coding by yourself",
+                              "Group discussions",
+                              "Lecture-style presentations")) +
+  scale_y_discrete(expand = c(0,0),
+                   labels = c("Very\nunhelpful",
+                              "Unhelpful",
+                              "Neutral",
+                              "Helpful",
+                              "Very\nhelpful")) +
+  scale_fill_gradient(low="white", high=color1) +
+  coord_flip() +
+  theme_bw() +
+  theme(axis.title.y = element_blank(),
+        axis.title.x = element_blank(),
+        axis.text.x = element_text(size=10,color="black"),
+        axis.text.y = element_text(size=12,color="black"),
+        panel.grid = element_blank(),
+        axis.ticks = element_blank(),
+        legend.position = "none")
+ggsave("/Users/Sarah/projects/teaching/output/q7post.png",plot_q7post,width=6,height=3)
+include_graphics("/Users/Sarah/projects/teaching/output/q7post.png")
+
+lecture <- data$post7a
+plc <- data$post7d
+
+# Adding non-lecture results, but dividing by 4 to ensure same sample size as lecture results
+other <- (data$post7b + data$post7c + data$post7d + data$post7e) / 4
+# Exact Wilcoxon rank-sign test to compare lectures to non-lectures
+lecture_p <- wilcox.exact(lecture,other,paired=T,alternative="g")$p.value
+lecture_mean <- round(mean(lecture,na.rm=T),2)
+other_mean <- round(mean(other,na.rm=T),2)
+
+# Exact binomial test comparing helpful & very helpful to other categories for participatory live coding
+plc_mean <- round(mean(plc,na.rm=T),2)
+num_samples <- sum(!is.na(data$post7d))
+plc_count <- sum(data$post7d==5,na.rm=T) + sum(data$post7d==4,na.rm=T)
+plc_percent <- round(plc_count / num_samples,2)
+plc_p <- binom.test(plc_count,num_samples,p=0.5,alternative="g")$p.value
+
+# Getting sample size
+start_ind <- which(colnames(data) == "post7a")
+row_sums <- c()
+for (i in 1:nrow(data)) {
+  row_sum <- sum(data[i,start_ind:(start_ind + 4)],na.rm=TRUE)
+  row_sums <- c(row_sums,row_sum)
+}
+N <- sum(row_sums != 0)
+
+# Printing statistical test results and percentages
+cat(" N = ", N, "\n",
+    "Exact Wilcoxon signed rank test", "\n",
+    "Lecture vs. other:                  p = ", lecture_p, "\n",
+    "Exact binomial test", "\n",
+    "PLC:                       ", plc_percent, " | p = ", plc_p, "\n",
+    "Lecture mean response:     ", lecture_mean, "\n",
+    "Non-lecture mean response: ", other_mean, "\n",
+    "PLC mean response:         ", plc_mean)
+```
+
+</div>
+
+</div>
+
+<hr style="border:2px solid gray">
+
+Question 8: Did you encounter any challenges during the workshop, and how did you handle them?
+
+```{r q8postresponses, eval=FALSE, results='asis', message=FALSE}
+# Printing responses ot open question IF permission was given
+for (i in 1:nrow(data)) {
+  if (!is.na(data$post8[i])) {
+    if (data$post8[i] != "") {
+      if (data$verbatim_yn_post[i] == 1) {
+        cat(paste0("<span style=\"color:",color2,"\">\n"))
+        cat(data$post8[i])
+        cat("<span>")
+        cat("\n")
+        cat("\n")
+      } else {
+        cat(paste0("<span style=\"color:",color2,"\">\n"))
+        cat(paste0(data$post8[i], " [DO NOT USE]"))
+        cat("<span>")
+        cat("\n")
+        cat("\n")
+      }
+    }
+  }
+}
+```
+
+<hr style="border:2px solid gray">
+
+**The term "participatory live coding" refers to activities where the instructor was typing code that everyone could see, and you "coded along" on your own computer.**
+
+<div class = "row">
+
+<div class = "col-md-6">
+
+Question 9: Do you think the *participatory live coding* activity will make it easier to implement phylogenetic models of historical biogeography in the future?
+
+Options: Much less easy, less easy, about the same, more easy, much more easy, I did not participate in this activity
+
+<span style="color: gray;">Finding: According to the exact binomial test comparing the combined "more easy" and "much more easy" categories to all other categories, participants did not indicate that participatory live coding would make it easier to implement the models in the future.</span>
+
+```{r q9postplot, message=FALSE}
+# Replacing numerical responses with strings
+mean_response <- round(mean(data$post9,na.rm=T),2)
+data$post9 <- gsub(1, "Much less easy", data$post9)
+data$post9 <- gsub(2, "Less easy", data$post9)
+data$post9 <- gsub(3, "About the same", data$post9)
+data$post9 <- gsub(4, "More easy", data$post9)
+data$post9 <- gsub(5, "Much more easy", data$post9)
+data$post9 <- gsub(6, "Did not participate", data$post9)
+
+# Plotting output
+levels <- c("Much less easy", "Less easy", "About the same", "More easy", "Much more easy", "Did not participate")
+plot_q9post <- ggplot(data = subset(data, !is.na(post9)), aes(x = factor(post9, levels = levels))) +
+  geom_bar(fill = color1) +
+  geom_text(aes(label = ..count..), stat = "count", vjust = 1.25, color = "white", size = 6) +
+  scale_x_discrete(drop = F,
+                   labels = c("Much\nless easy",
+                              "Less easy",
+                              "About\nthe same",
+                              "More easy",
+                              "Much\nmore easy",
+                              "Did not\nparticipate")) +
+  scale_y_continuous(expand = c(0,0)) +
+  theme_bw() +
+  theme(axis.ticks.y = element_blank(),
+        axis.ticks.x = element_blank(),
+        axis.text.y = element_blank(),
+        axis.text.x = element_text(size=12,color="black"),
+        axis.title.y = element_blank(),
+        axis.title.x = element_blank(),
+        panel.grid = element_blank(),
+        panel.border = element_blank())
+ggsave("/Users/Sarah/projects/teaching/output/q9post.png",plot_q9post,width=6,height=5)
+include_graphics("/Users/Sarah/projects/teaching/output/q9post.png")
+
+# Exact binomial test comparing more & much more easy to other responses
+num_samples <- sum(!is.na(data$post9))
+more_count <- sum(data$post9=="More easy",na.rm=T) + sum(data$post9=="Much more easy",na.rm=T)
+more_p <- binom.test(more_count,num_samples,p=0.5,alternative="g")$p.value
+more_percent <- round(more_count / num_samples, 2)
+
+# Printing statistical test results and percentages
+cat(" N = ", num_samples, "\n",
+    "Exact binomial test", "\n",
+    "More & much more easy: ", more_percent, " | p = ", more_p, "\n",
+    "Mean response:         ", mean_response)
+```
+
+</div>
+
+<div class = "col-md-6">
+
+Question 10: Do you think the *participatory live coding* activity made you more or less likely to engage with phylogenetic models of historical biogeography?
+
+Options: Much less likely, less likely, about the same, more likely, much more likely, I did not participate in this activity
+
+<span style="color: gray;">Finding: According to the exact binomial test comparing the combined "more likely" and "much more likely" categories to all other categories, participants did not indicate that participatory live coding would make them more likely to implement the models in the future.</span>
+
+```{r q10postplot, message=FALSE}
+# Replacing numerical responses with strings
+mean_response <- round(mean(data$post10,na.rm=T),2)
+data$post10 <- gsub(1, "Much less likely", data$post10)
+data$post10 <- gsub(2, "Less likely", data$post10)
+data$post10 <- gsub(3, "About the same", data$post10)
+data$post10 <- gsub(4, "More likely", data$post10)
+data$post10 <- gsub(5, "Much more likely", data$post10)
+data$post10 <- gsub(6, "Did not participate", data$post10)
+
+# Plotting output
+levels <- c("Much less likely", "Less likely", "About the same", "More likely", "Much more likely", "Did not participate")
+plot_q10post <- ggplot(data = subset(data, !is.na(post10)), aes(x = factor(post10, levels = levels))) +
+  geom_bar(fill = color1) +
+  geom_text(aes(label = ..count..), stat = "count", vjust = 1.25, color = "white", size = 6) +
+  scale_x_discrete(drop = F,
+                   labels = c("Much\nless likely",
+                              "Less likely",
+                              "About\nthe same",
+                              "More likely",
+                              "Much\nmore likely",
+                              "Did not\nparticipate")) +
+  scale_y_continuous(expand = c(0,0)) +
+  theme_bw() +
+  theme(axis.ticks.y = element_blank(),
+        axis.ticks.x = element_blank(),
+        axis.text.y = element_blank(),
+        axis.text.x = element_text(size=12,color="black"),
+        axis.title.y = element_blank(),
+        axis.title.x = element_blank(),
+        panel.grid = element_blank(),
+        panel.border = element_blank())
+ggsave("/Users/Sarah/projects/teaching/output/q10post.png",plot_q10post,width=6,height=5)
+include_graphics("/Users/Sarah/projects/teaching/output/q10post.png")
+
+# Exact binomial test comparing more & much more likely to other responses
+num_samples <- sum(!is.na(data$post10))
+more_count <- sum(data$post10=="More likely",na.rm=T) + sum(data$post10=="Much more likely",na.rm=T)
+more_p <- binom.test(more_count,num_samples,p=0.5,alternative="g")$p.value
+more_percent <- round(more_count / num_samples, 2)
+
+# Printing statistical test results and percentages
+cat(" N = ", N, "\n",
+    "Exact binomial test", "\n",
+    "More & much more likely: ", more_percent, " | p = ", more_p, "\n",
+    "Mean response:           ", mean_response)
+```
+
+</div>
+
+</div>
+
+<hr style="border:2px solid gray">
