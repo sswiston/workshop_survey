@@ -25,3 +25,7 @@ Code/Software
 Version Changes:
 
 * `2026-11-24` Updated the associated article information, added CC0 license in `LICENSE.md`, added `codebook.md`, and modified `workshop_survey_project.Rmd` to use relative paths instead of absolute paths
+
+## Human subjects data
+
+Consent was acquired prior to the administration of each survey. Survey participants had the option to skip any questions they did not wish to answer, and participants were asked to directly consent to the use of verbatim responses in publication. Data were anonymized before analysis, with pre- and post-workshop surveys linked only via anonymous identifiers. The full survey response dataset is not provided for participants' privacy; all data and responses are reported in aggregate.
