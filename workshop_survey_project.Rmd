@@ -31,7 +31,7 @@ library(patchwork)
 library(exactRankTests)
 
 # Raw data file
-data <- read.csv("/Users/Sarah/projects/teaching/data/data.csv",header=TRUE)
+data <- read.csv("./data.csv",header=TRUE)
 
 # These rows correspond to survey responses from non-attendees
 remove_rows <- which(data$participant_id == 26)
@@ -141,8 +141,8 @@ plot_q1pre <- ggplot(data = subset(data, !is.na(pre1a)), aes(x = factor(pre1a, l
         axis.title.x = element_blank(),
         panel.grid = element_blank(),
         panel.border = element_blank())
-ggsave("/Users/Sarah/projects/teaching/output/q1pre.png",plot_q1pre,width=6,height=4)
-include_graphics("/Users/Sarah/projects/teaching/output/q1pre.png")
+ggsave("./output/q1pre.png",plot_q1pre,width=6,height=4)
+include_graphics("./output/q1pre.png")
 
 # Getting sample size
 N <- sum(!is.na(data$pre1a))
@@ -216,8 +216,8 @@ plot_q2pre <- ggplot(data = data_q2, aes(x = factor(response,levels=levels), y =
         axis.title.x = element_blank(),
         panel.grid = element_blank(),
         panel.border = element_blank())
-ggsave("/Users/Sarah/projects/teaching/output/q2pre.png",plot_q2pre,width=6,height=3)
-include_graphics("/Users/Sarah/projects/teaching/output/q2pre.png")
+ggsave("./output/q2pre.png",plot_q2pre,width=6,height=3)
+include_graphics("./output/q2pre.png")
 
 # For each row (attendee), determining how many boxes were checked
 start_ind <- which(colnames(data) == "pre2a___1")
@@ -338,8 +338,8 @@ plot_q3pre <- ggplot(data = data_q3, aes(x = factor(question, levels = questions
         axis.title.x = element_blank(),
         panel.grid = element_blank(),
         legend.position = "none")
-ggsave("/Users/Sarah/projects/teaching/output/q3pre.png",plot_q3pre,width=6,height=4)
-include_graphics("/Users/Sarah/projects/teaching/output/q3pre.png")
+ggsave("./output/q3pre.png",plot_q3pre,width=6,height=4)
+include_graphics("./output/q3pre.png")
 
 # Combining some response types for statistical tests, excluding RevBayes
 familiar_or_competent <- data_q3$count[which(data_q3$answer[1:35]=="Somewhat familiar")] + data_q3$count[which(data_q3$answer[1:35]=="Competent")]
@@ -455,8 +455,8 @@ plot_q4pre <- ggplot(data = data_q4, aes(x = factor(question, levels = questions
         panel.grid = element_blank(),
         axis.ticks = element_blank(),
         legend.position = "none")
-ggsave("/Users/Sarah/projects/teaching/output/q4pre.png",plot_q4pre,width=6,height=4)
-include_graphics("/Users/Sarah/projects/teaching/output/q4pre.png")
+ggsave("./output/q4pre.png",plot_q4pre,width=6,height=4)
+include_graphics("./output/q4pre.png")
 
 # Exact Wilcoxon signed rank tests comparing distribution of "stopped" versus "continued" for each topic and all topics combined
 software_p <- wilcox.exact(data$pre4a,data$pre4b,paired=T,alternative="l")$p.value
@@ -585,8 +585,8 @@ plot_timing <- ggplot(data = subset(data, !is.na(pre5b)), aes(x = factor(pre5b, 
 # Plotting both plots
 plot_q5pre <- plot_yn / plot_spacer() / plot_timing +
   plot_layout(heights = c(4,.5,4))
-ggsave("/Users/Sarah/projects/teaching/output/q5pre.png",plot_q5pre,width=6,height=4)
-include_graphics("/Users/Sarah/projects/teaching/output/q5pre.png")
+ggsave("./output/q5pre.png",plot_q5pre,width=6,height=4)
+include_graphics("./output/q5pre.png")
 
 # Counting the number of responses
 num_samples <- sum(!is.na(data$pre5a))
@@ -680,8 +680,8 @@ plot_q1post <- ggplot(data = subset(data_post1code, !is.na(post1code)), aes(x = 
         axis.title.x = element_blank(),
         panel.grid = element_blank(),
         panel.border = element_blank())
-ggsave("/Users/Sarah/projects/teaching/output/q1post.png",plot_q1post,width=6,height=3)
-include_graphics("/Users/Sarah/projects/teaching/output/q1post.png")
+ggsave("./output/q1post.png",plot_q1post,width=6,height=3)
+include_graphics("./output/q1post.png")
 
 # Countin the total number of responses
 num_samples <- length(post1code_list[which(!is.na(post1code_list))])
@@ -799,8 +799,8 @@ plot_q2post <- ggplot(data = data_q2, aes(x = factor(question, levels = question
         axis.title.x = element_blank(),
         panel.grid = element_blank(),
         legend.position = "none")
-ggsave("/Users/Sarah/projects/teaching/output/q2post.png",plot_q2post,width=6,height=4)
-include_graphics("/Users/Sarah/projects/teaching/output/q2post.png")
+ggsave("./output/q2post.png",plot_q2post,width=6,height=4)
+include_graphics("./output/q2post.png")
 
 # Getting sample size
 start_ind <- which(colnames(data) == "post2a")
@@ -910,8 +910,8 @@ plot_conf <- ggplot(data = conf_props, aes(x = factor(pre), y = factor(post), fi
         axis.ticks = element_blank(),
         legend.position = "none",
         aspect.ratio = 1)
-ggsave("/Users/Sarah/projects/teaching/output/conf.png",plot_conf,width=6,height=5)
-include_graphics("/Users/Sarah/projects/teaching/output/conf.png")
+ggsave("./output/conf.png",plot_conf,width=6,height=5)
+include_graphics("./output/conf.png")
 ```
 
 </div>
@@ -985,8 +985,8 @@ plot_q4post <- ggplot(data = subset(data, !is.na(post4a)), aes(x = factor(post4a
         axis.title.x = element_blank(),
         panel.grid = element_blank(),
         panel.border = element_blank())
-ggsave("/Users/Sarah/projects/teaching/output/q4post.png",plot_q4post,width=6,height=4)
-include_graphics("/Users/Sarah/projects/teaching/output/q4post.png")
+ggsave("./output/q4post.png",plot_q4post,width=6,height=4)
+include_graphics("./output/q4post.png")
 
 # Getting the sample size
 num_samples <- sum(!is.na(data$post4a))
@@ -1101,8 +1101,8 @@ plot_q6post <- ggplot(data = subset(data, !is.na(post6a)), aes(x = factor(post6a
         axis.title.x = element_blank(),
         panel.grid = element_blank(),
         panel.border = element_blank())
-ggsave("/Users/Sarah/projects/teaching/output/q6post.png",plot_q6post,width=6,height=3)
-include_graphics("/Users/Sarah/projects/teaching/output/q6post.png")
+ggsave("./output/q6post.png",plot_q6post,width=6,height=3)
+include_graphics("./output/q6post.png")
 
 # Getting the number of samples
 num_samples <- sum(!is.na(data$post6a))
@@ -1220,8 +1220,8 @@ plot_q7post <- ggplot(data = data_q7, aes(x = factor(question, levels = question
         panel.grid = element_blank(),
         axis.ticks = element_blank(),
         legend.position = "none")
-ggsave("/Users/Sarah/projects/teaching/output/q7post.png",plot_q7post,width=6,height=3)
-include_graphics("/Users/Sarah/projects/teaching/output/q7post.png")
+ggsave("./output/q7post.png",plot_q7post,width=6,height=3)
+include_graphics("./output/q7post.png")
 
 lecture <- data$post7a
 plc <- data$post7d
@@ -1337,8 +1337,8 @@ plot_q9post <- ggplot(data = subset(data, !is.na(post9)), aes(x = factor(post9, 
         axis.title.x = element_blank(),
         panel.grid = element_blank(),
         panel.border = element_blank())
-ggsave("/Users/Sarah/projects/teaching/output/q9post.png",plot_q9post,width=6,height=5)
-include_graphics("/Users/Sarah/projects/teaching/output/q9post.png")
+ggsave("./output/q9post.png",plot_q9post,width=6,height=5)
+include_graphics("./output/q9post.png")
 
 # Exact binomial test comparing more & much more easy to other responses
 num_samples <- sum(!is.na(data$post9))
@@ -1395,8 +1395,8 @@ plot_q10post <- ggplot(data = subset(data, !is.na(post10)), aes(x = factor(post1
         axis.title.x = element_blank(),
         panel.grid = element_blank(),
         panel.border = element_blank())
-ggsave("/Users/Sarah/projects/teaching/output/q10post.png",plot_q10post,width=6,height=5)
-include_graphics("/Users/Sarah/projects/teaching/output/q10post.png")
+ggsave("./output/q10post.png",plot_q10post,width=6,height=5)
+include_graphics("./output/q10post.png")
 
 # Exact binomial test comparing more & much more likely to other responses
 num_samples <- sum(!is.na(data$post10))

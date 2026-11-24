@@ -1,7 +1,7 @@
 Assessing the efficacy of computational workshops and participatory live coding in evolutionary biology
 ---
 
-This dataset is associated with Swiston, Kuehne, Moore, & Landis 2026 (DOI TBD). It contains the surveys, recruitment materials, and code associated with the project. Raw survey responses are excluded for participant privacy.
+This dataset is associated with Swiston S, Kuehne L, Moore R, & Landis M (2026) *Frontiers of Biogeography* [DOI 10.21425/fob.19.209779]. It contains the surveys, recruitment materials, and code associated with the project. Raw survey responses are excluded for participant privacy.
 
 # Description of the data and file structure
 
