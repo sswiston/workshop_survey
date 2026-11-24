@@ -5,9 +5,9 @@ This dataset is associated with Swiston S. K., Kuehne L., Moore R., & Landis M. 
 
 # Description of the data and file structure
 
-* `pre_workshop_survey` contains a .pdf version of the pre-workshop survey administered to participants via REDCap.
-* `post_workshop_survey` contains a .pdf version of the post-workshop survey administered to participants via REDCap.
-* `recruitment_materials` contains the emails sent to workshop participants before and after the workshops to recruit them to participate in the survey. It also contains the verbal announcements made to participants during the workshop.
+* `pre_workshop_survey.pdf` contains a .pdf version of the pre-workshop survey administered to participants via REDCap.
+* `post_workshop_survey.pdf` contains a .pdf version of the post-workshop survey administered to participants via REDCap.
+* `recruitment_materials.pdf` contains the emails sent to workshop participants before and after the workshops to recruit them to participate in the survey. It also contains the verbal announcements made to participants during the workshop.
 * `codebook.md` contains variable names and descriptions for the survey response data (data not included for privacy)
 * `workshop_survey_project.Rmd` contains the R code for processing the survey data, performing statistical tests, and generating plots.
 * `workshop_survey_project.html` is the knitted (.html) version of `workshop_survey_project.Rmd`, offering a more user-friendly method of viewing the code and results.
